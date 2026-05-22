@@ -221,12 +221,24 @@ Font: **Inter** (UI) + **JetBrains Mono** (angka/kode) via Google Fonts CDN.
 
 ## Workflow Otomasi (script `pdo_update.py`)
 
-**Recall sederhana**: drop PDF SPJ ke folder, jalankan satu perintah:
+**Dua cara recall** — pilih sesuai konteks:
+
+### Cara 1: Slash command `/pdo-update` di Claude Code (rekomendasi)
+Drop PDF ke folder, lalu di dalam Claude Code ketik:
+```
+/pdo-update
+```
+Skill akan: pilih PDF terbaru → run script `--no-deploy` → tampilkan validation summary di chat (total, sisa per program, 4 cross-check, top 3 item realisasi, top 3 kenaikan, flag bulan transition) → AskUserQuestion konfirmasi → push ke GitHub Pages kalau OK. Ada gate "review before deploy" supaya tidak ada data salah ter-publish.
+
+Lokasi definisi skill: `C:\Users\My ASUS\.claude\skills\pdo-update\SKILL.md`.
+
+### Cara 2: Terminal langsung
 ```bash
 py pdo_update.py "Fungsional Per <tgl>_<bln>_<thn>.pdf"
 ```
+Script auto: detect baseline HTML terbaru → extract PDF → deteksi bulan transition → susun RAW_DATA pakai logic rolling → generate HTML + diff report `.md` → prompt deploy → commit & push ke GitHub Pages.
 
-Script auto: detect baseline HTML terbaru → extract PDF → deteksi bulan transition → susun RAW_DATA pakai logic rolling → generate HTML + diff report `.md` → commit & push ke GitHub Pages.
+Tambah `-y` untuk skip semua prompt, `--no-deploy` untuk uji lokal, `--deploy-only` untuk push file output terbaru tanpa regenerate.
 
 **Dashboard live:** https://gustiyuda14-source.github.io/pdo-realisasi-2026/
 **Repo:** https://github.com/gustiyuda14-source/pdo-realisasi-2026 (public)
@@ -240,13 +252,15 @@ Script auto: detect baseline HTML terbaru → extract PDF → deteksi bulan tran
 
 ### Flag override
 ```
---baseline <path>     Pilih baseline HTML manual (default: auto-detect by CURR_DATE terbaru)
---output <path>       Override nama file output
---no-deploy           Skip push GitHub Pages (untuk uji lokal)
---dry-run             Generate ke memory saja, tidak tulis file
---c11p-rolling        Pakai literal rolling (c11p=c11n_lama), bukan rebase=0
---repo <name>         Override nama repo GitHub Pages
---yes / -y            Auto-confirm semua prompt
+--baseline <path>        Pilih baseline HTML manual (default: auto-detect by CURR_DATE terbaru)
+--output <path>          Override nama file output
+--no-deploy              Skip push GitHub Pages (untuk uji lokal)
+--dry-run                Generate ke memory saja, tidak tulis file
+--c11p-rolling           Pakai literal rolling (c11p=c11n_lama), bukan rebase=0
+--repo <name>            Override nama repo GitHub Pages
+--validation-json <path> Emit struct JSON (untuk skill /pdo-update di Claude Code)
+--deploy-only            Skip generate, langsung push file output terbaru
+--yes / -y               Auto-confirm semua prompt
 ```
 
 ### Cross-check otomatis (script print di terminal + tulis di report)
