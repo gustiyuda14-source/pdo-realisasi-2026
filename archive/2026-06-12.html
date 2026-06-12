@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pengendali Digital ON — Juni 2026 · Perbandingan Mingguan per 12 Jun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─── Design Tokens ─────────────────────────────────────── */
+:root{
+  --bg:#0F172A;
+  --surface:#1A2540;
+  --surface-2:#202D47;
+  --surface-3:#2A3A57;
+  --border:rgba(148,163,184,0.11);
+  --border-2:rgba(148,163,184,0.18);
+  --primary:#38BDF8;
+  --primary-dim:rgba(56,189,248,0.10);
+  --success:#34D399;
+  --success-dim:rgba(52,211,153,0.10);
+  --violet:#A78BFA;
+  --violet-dim:rgba(167,139,250,0.10);
+  --danger:#F87171;
+  --danger-dim:rgba(248,113,113,0.10);
+  --amber:#FBBF24;
+  --amber-dim:rgba(251,191,36,0.09);
+  --text:#E2E8F0;
+  --text-2:#94A3B8;
+  --text-3:#64748B;
+  --font:'Inter','Segoe UI',system-ui,sans-serif;
+  --mono:'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+  --radius:14px;
+  --radius-sm:9px;
+  --radius-xs:5px;
+  --shadow:0 8px 32px rgba(0,0,0,0.45);
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ─── Reset ──────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.5;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-3)}
+
+/* ─── Layout ─────────────────────────────────────────────── */
+.dash{padding:20px 22px 36px;max-width:1680px;margin:0 auto}
+
+/* ─── Header ─────────────────────────────────────────────── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:22px;flex-wrap:wrap;gap:12px;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--border);
+}
+.logo-area{display:flex;align-items:center;gap:14px}
+.logo-icon{
+  width:46px;height:46px;border-radius:12px;
+  background:linear-gradient(135deg,#38BDF8 0%,#6366F1 100%);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:700;font-size:12px;flex-shrink:0;
+  box-shadow:0 0 28px rgba(56,189,248,0.28),0 4px 12px rgba(0,0,0,0.4);
+  letter-spacing:.5px
+}
+.logo-text h2{font-size:15px;font-weight:600;color:var(--text);line-height:1.3}
+.logo-text p{font-size:11px;color:var(--text-2);margin-top:3px}
+.hdr-right{text-align:right}
+.hdr-right .period{font-size:13px;font-weight:600;color:var(--primary)}
+.hdr-right .dt{font-size:11px;color:var(--text-3);margin-top:3px}
+
+/* ─── KPI Grid ───────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(162px,1fr));gap:12px;margin-bottom:14px}
+.kpi{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 15px;
+  position:relative;overflow:hidden;
+  transition:transform .18s ease,box-shadow .18s ease;
+}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+/* Top gradient accent bar */
+.kpi::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:2.5px;
+  border-radius:var(--radius) var(--radius) 0 0;
+}
+.kpi.c-blue::after{background:linear-gradient(90deg,#38BDF8,#6366F1)}
+.kpi.c-green::after{background:linear-gradient(90deg,#34D399,#059669)}
+.kpi.c-amber::after{background:linear-gradient(90deg,#FBBF24,#D97706)}
+.kpi.c-red::after{background:linear-gradient(90deg,#F87171,#DC2626)}
+.kpi.c-purple::after{background:linear-gradient(90deg,#A78BFA,#7C3AED)}
+.kpi-lbl{font-size:9px;color:var(--text-3);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
+.kpi-val{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--text);word-break:break-all;margin-bottom:4px}
+.kpi-sub{font-size:10px;color:var(--text-2)}
+.kpi-badge{
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:9px;font-weight:600;margin-top:6px;
+  background:var(--danger-dim);color:var(--danger);
+  border:1px solid rgba(248,113,113,0.2);
+}
+.kpi-badge-green{
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:9px;font-weight:600;margin-top:6px;
+  background:var(--success-dim);color:var(--success);
+  border:1px solid rgba(52,211,153,0.22);
+}
+
+/* ─── Mid Grid ───────────────────────────────────────────── */
+.mid-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+@media(max-width:1024px){.mid-grid{grid-template-columns:1fr}}
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:16px 15px;
+}
+.card-title{font-size:9px;font-weight:600;margin-bottom:14px;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px}
+
+/* ─── Program bars ───────────────────────────────────────── */
+.prog-item{margin-bottom:13px;padding-bottom:13px;border-bottom:1px solid var(--border)}
+.prog-item:last-child{border-bottom:none;margin-bottom:0}
+.prog-hdr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.prog-name{font-size:10px;font-weight:500;flex:1;color:var(--text);line-height:1.4}
+.prog-pct{font-size:13px;font-weight:700;flex-shrink:0}
+.prog-detail{font-size:9px;color:var(--text-3);font-family:var(--mono);margin-top:4px}
+.prog-bar-bg{height:5px;background:var(--surface-3);border-radius:3px;overflow:hidden;margin-top:3px}
+.prog-bar{height:100%;border-radius:3px;transition:width .3s ease}
+
+/* ─── Compare Box ────────────────────────────────────────── */
+.compare-box{display:flex;gap:6px;margin-top:13px;padding-top:13px;border-top:1px solid var(--border);align-items:stretch}
+.cmp{flex:1;background:var(--surface-2);border-radius:var(--radius-sm);padding:10px 8px;text-align:center;border:1px solid var(--border)}
+.cmp.prev{border-color:rgba(56,189,248,0.2);background:rgba(56,189,248,0.06)}
+.cmp.curr{border-color:rgba(52,211,153,0.2);background:rgba(52,211,153,0.06)}
+.cmp.delta{border-color:rgba(167,139,250,0.2);background:rgba(167,139,250,0.06)}
+.cmp-lbl{font-size:8px;color:var(--text-3);margin-bottom:3px;text-transform:uppercase;font-weight:600;letter-spacing:.5px}
+.cmp-pct{font-size:14px;font-weight:700}
+.cmp-val{font-size:9px;color:var(--text-2);font-family:var(--mono);margin-top:2px}
+.arr{display:flex;align-items:center;color:var(--text-3);font-size:14px;flex-shrink:0;padding:0 2px}
+
+/* ─── Alerts ─────────────────────────────────────────────── */
+.alerts{display:flex;flex-direction:column;gap:6px;max-height:310px;overflow-y:auto;font-size:9px}
+.alert-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2)}
+.alert-item.danger{background:var(--danger-dim);border-color:rgba(248,113,113,0.22)}
+.alert-item.warn{background:var(--amber-dim);border-color:rgba(251,191,36,0.2)}
+.alert-item.ok{background:var(--success-dim);border-color:rgba(52,211,153,0.16)}
+.adot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.adot.danger{background:var(--danger);box-shadow:0 0 7px rgba(248,113,113,0.5)}
+.adot.warn{background:var(--amber);box-shadow:0 0 7px rgba(251,191,36,0.45)}
+.adot.ok{background:var(--success);box-shadow:0 0 7px rgba(52,211,153,0.45)}
+.atext{flex:1}
+.atext strong{display:block;font-weight:600;margin-bottom:1px;font-size:9px;color:var(--text)}
+.aval{font-family:var(--mono);font-size:8px;color:var(--text-2)}
+.aval.delta{color:var(--violet);font-weight:600}
+.apct{font-size:11px;font-weight:700;flex-shrink:0}
+
+/* ─── Selisih Banner ─────────────────────────────────────── */
+.selisih-banner{
+  background:linear-gradient(135deg,rgba(56,189,248,0.06) 0%,rgba(52,211,153,0.06) 100%);
+  border:1px solid var(--border-2);
+  border-radius:var(--radius);
+  padding:14px 20px;margin-bottom:14px;
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+}
+.sel-item{text-align:center;flex:1;min-width:90px}
+.sel-lbl{font-size:8px;color:var(--text-3);text-transform:uppercase;margin-bottom:4px;font-weight:600;letter-spacing:.6px}
+.sel-val{font-size:13px;font-weight:700;font-family:var(--mono)}
+.sel-sub{font-size:9px;color:var(--text-3);margin-top:2px}
+.sel-divider{width:1px;background:var(--border-2);align-self:stretch}
+
+/* ─── Table Card ─────────────────────────────────────────── */
+.tbl-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:12px;
+}
+.tbl-hdr{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+  gap:8px;flex-wrap:wrap;
+  background:var(--surface-2);
+}
+.tbl-hdr h3{font-size:10px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.6px}
+.tbl-scroll{overflow-x:auto;max-height:750px;overflow-y:auto}
+
+/* ─── Table ──────────────────────────────────────────────── */
+table{width:100%;border-collapse:collapse;min-width:1100px;font-size:10px}
+thead th{
+  background:var(--surface-2);padding:8px 10px;
+  text-align:left;font-weight:600;color:var(--text-3);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+  position:sticky;top:0;z-index:1;
+  font-size:9px;letter-spacing:.4px;
+}
+thead th.r{text-align:right}
+thead th.sel{background:rgba(167,139,250,0.1);color:var(--violet);text-align:right}
+thead .grp-prev{background:rgba(56,189,248,0.08)}
+thead .grp-curr{background:rgba(52,211,153,0.08)}
+tbody tr{border-bottom:1px solid rgba(148,163,184,0.06);transition:background .1s}
+tbody tr:hover{background:rgba(148,163,184,0.04)!important}
+td{padding:6px 10px;vertical-align:middle;font-size:10px}
+td.r{text-align:right;font-family:var(--mono)}
+td.kd{font-family:var(--mono);font-size:9px;color:var(--text-3);white-space:nowrap}
+td.sel-td{text-align:right;font-family:var(--mono);background:rgba(167,139,250,0.04)}
+.chip{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:600}
+.chip-up{background:var(--success-dim);color:var(--success);border:1px solid rgba(52,211,153,0.22)}
+.chip-zero{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.22)}
+.chip-kritis{background:var(--danger-dim);color:var(--danger);border:1px solid rgba(248,113,113,0.22)}
+.chip-flat{background:rgba(148,163,184,0.07);color:var(--text-3);border:1px solid var(--border)}
+.bar-mini{display:inline-block;width:50px;height:4px;background:var(--surface-3);border-radius:2px;vertical-align:middle;margin-right:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+.tog{cursor:pointer;margin-right:4px;font-size:10px;color:var(--text-3)}
+tr.level-prog{background:rgba(56,189,248,0.055)!important}
+tr.level-subkeg{background:rgba(251,191,36,0.04)!important}
+tr.level-item{background:transparent}
+.level-prog td.kd{color:var(--primary);font-weight:600}
+.level-subkeg td.kd{color:var(--amber);font-weight:600}
+tr.naik-minggu td{border-left:2px solid var(--violet)}
+tr.clickable-item{cursor:pointer;transition:background .15s}
+tr.clickable-item:hover{background:rgba(167,139,250,0.07)!important}
+tr.clickable-item .nama-td{color:var(--primary);text-decoration:underline dotted;text-underline-offset:3px}
+
+/* ─── Modal Animations ───────────────────────────────────── */
+#detailModal{animation:fadeIn .18s ease-out}
+#detailModal>div{animation:slideIn .22s cubic-bezier(.16,1,.3,1)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ─── Rekening Cards ─────────────────────────────────────── */
+.rek-card{border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:10px;overflow:hidden}
+.rek-card.naik{border-color:rgba(167,139,250,0.3);border-left:3px solid var(--violet)}
+.rek-hdr{background:var(--surface-2);padding:10px 12px;border-bottom:1px solid var(--border)}
+.rek-hdr.naik{background:rgba(167,139,250,0.07)}
+.rek-kode{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--primary)}
+.rek-nama{font-size:11px;color:var(--text);margin-top:2px}
+.rek-rows{padding:0}
+.rek-row{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;border-bottom:1px solid rgba(148,163,184,0.06);font-size:11px;gap:8px}
+.rek-row:last-child{border-bottom:none}
+.rek-row.highlight{background:rgba(167,139,250,0.07)}
+.rek-lbl{color:var(--text-2);flex:1;font-size:10.5px}
+.rek-val{font-family:var(--mono);font-weight:500;text-align:right;white-space:nowrap}
+.rek-val.up{color:var(--violet);font-weight:700}
+.rek-val.blue{color:var(--primary)}
+.rek-val.green{color:var(--success)}
+.rek-val.amber{color:var(--amber)}
+.rek-val.zero{color:var(--text-3)}
+</style>
+</head>
+<body>
+<div class="dash">
+
+<!-- ─── Header ─── -->
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-icon">PDO</div>
+    <div class="logo-text">
+      <h2>Pengendali Digital ON — Perbandingan Mingguan Juni 2026</h2>
+      <p>Inspektorat Pemprov Sulawesi Tenggara · TA 2026 · 52 Items · <span style="color:#A78BFA;font-weight:500">📅 Minggu Lalu (5 Jun) → 12 Juni 2026 | 🔍 Klik item biru = detail rekening SPJ</span></p>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div class="period">Update 12 Juni 2026</div>
+    <div class="dt" id="tgl"></div>
+  </div>
+</div>
+
+<div class="kpi-grid" id="kpiGrid"></div>
+<div class="selisih-banner" id="selisihBanner"></div>
+
+<div class="mid-grid">
+  <div class="card">
+    <div class="card-title">3 Program Monitoring — Minggu Lalu vs 12 Juni 2026</div>
+    <div id="progRealisasi"></div>
+    <div class="compare-box">
+      <div class="cmp prev"><div class="cmp-lbl">Minggu Lalu</div><div class="cmp-pct" id="cmpPrev" style="color:#60A5FA">—</div><div class="cmp-val" id="cmpPrevVal">—</div></div>
+      <div class="arr">→</div>
+      <div class="cmp curr"><div class="cmp-lbl">12 Jun 2026</div><div class="cmp-pct" id="cmpCurr" style="color:#34D399">—</div><div class="cmp-val" id="cmpCurrVal">—</div></div>
+      <div class="arr">Δ</div>
+      <div class="cmp delta"><div class="cmp-lbl">Selisih Minggu</div><div class="cmp-pct" id="cmpDelta" style="color:#A78BFA">—</div><div class="cmp-val" id="cmpDeltaVal">—</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Top Kritis / Warning / Aktif (12 Sub-Kegiatan)</div>
+    <div class="alerts" id="alertsDiv"></div>
+  </div>
+</div>
+
+<div class="tbl-card">
+  <div class="tbl-hdr">
+    <h3>📊 Rekapitulasi 52 Items — Minggu Lalu vs 12 Juni 2026</h3>
+    <span style="font-size:9px;color:#A78BFA;font-weight:500">🟣 border kiri ungu = ada kenaikan | 🔍 teks biru bergaris = klik detail rekening SPJ</span>
+  </div>
+  <div class="tbl-scroll">
+  <table>
+  <thead>
+    <tr>
+      <th rowspan="2" style="width:130px">Kode</th>
+      <th rowspan="2">Uraian</th>
+      <th rowspan="2" class="r" style="width:105px">Pagu (Rp)</th>
+      <th class="r grp-prev" style="width:105px">Minggu Lalu (Rp)</th>
+      <th class="r grp-curr" style="width:105px">12 Jun 2026 (Rp)</th>
+      <th class="sel" style="width:100px">Selisih Minggu</th>
+      <th rowspan="2" class="r" style="width:100px">Sisa Pagu</th>
+      <th rowspan="2" style="width:66px">% Real.</th>
+      <th rowspan="2" style="width:78px">Status</th>
+    </tr>
+    <tr>
+      <th class="r grp-prev" style="font-size:8px;font-weight:400;color:#60A5FA">(snapshot sblmnya)</th>
+      <th class="r grp-curr" style="font-size:8px;font-weight:400;color:#34D399">(update final)</th>
+      <th class="sel" style="font-size:8px;font-weight:400;color:#A78BFA">(Δ minggu ini)</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+  </table>
+  </div>
+</div>
+</div>
+
+<!-- ─── Modal Detail Rekening ─── -->
+<div id="detailModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.75);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:#1A2540;border:1px solid rgba(148,163,184,0.14);padding:22px;border-radius:18px;width:94%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 28px 72px rgba(0,0,0,0.65),0 0 0 1px rgba(56,189,248,0.07)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid rgba(148,163,184,0.12);padding-bottom:12px">
+      <div>
+        <h2 style="font-size:14px;font-weight:600;margin:0;color:#38BDF8;font-family:var(--font)">🔍 Detail Rincian Rekening SPJ</h2>
+        <p style="font-size:10px;color:#64748B;margin:3px 0 0">Tekan Esc atau klik luar untuk menutup</p>
+      </div>
+      <button onclick="closeModal()" style="background:rgba(148,163,184,0.1);border:1px solid rgba(148,163,184,0.15);width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;color:#94A3B8;line-height:1;transition:all .15s" onmouseover="this.style.background='rgba(248,113,113,0.15)';this.style.color='#F87171'" onmouseout="this.style.background='rgba(148,163,184,0.1)';this.style.color='#94A3B8'">×</button>
+    </div>
+    <div id="modalBody"></div>
+    <div style="margin-top:14px;text-align:right;border-top:1px solid rgba(148,163,184,0.12);padding-top:12px">
+      <button onclick="closeModal()" style="padding:8px 22px;background:linear-gradient(135deg,#38BDF8,#6366F1);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;letter-spacing:.3px;transition:opacity .15s;font-family:var(--font)" onmouseover="this.style.opacity='.82'" onmouseout="this.style.opacity='1'">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PAGU_TOTAL = 24335335344;
+const PREV_DATE  = '5 Jun 2026';
+const CURR_DATE  = '12 Jun 2026';
+
+// Struktur detail:
+// c10 = Kolom 10 SPJ (Realisasi s.d. Bulan Lalu / Maret)
+// c11p = Kolom 11 dari SPJ minggu lalu (PREV_DATE)
+// c11n = Kolom 11 dari SPJ ini (CURR_DATE)
+// total = c10 + c11n  |  sisa = p - total  |  delta = c11n - c11p
+
+const RAW_DATA = [
+  {t:'prog',k:'6.01',n:'PROGRAM PENUNJANG URUSAN PEMERINTAHAN DAERAH PROVINSI',p:20320297344,m:9949924164,f:9127089144},
+    {t:'subkeg',k:'6.01.01.1.01',n:'Perencanaan, Penganggaran, dan Evaluasi Kinerja Perangkat Daerah',p:7242100,m:0,f:0,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.01.0001',n:'Penyusunan Dokumen Perencanaan Perangkat Daerah',p:2721500,m:0,f:0,sk:'6.01.01.1.01',
+        details:[
+          {k:'5.1.02.01.001.00024',n:'Belanja Alat/Bahan untuk Kegiatan Kantor-Alat Tulis Kantor',p:21500,c10:0,c11p:0,c11n:0,total:0,sisa:21500,delta:0},
+          {k:'5.1.02.01.001.00025',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Kertas dan Cover',p:1730000,c10:0,c11p:0,c11n:0,total:0,sisa:1730000,delta:0},
+          {k:'5.1.02.01.001.00026',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Cetak',p:970000,c10:0,c11p:0,c11n:0,total:0,sisa:970000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.01.0002',n:'Koordinasi dan Penyusunan Dokumen RKA-SKPD',p:1062600,m:0,f:0,sk:'6.01.01.1.01',
+        details:[
+          {k:'5.1.02.01.001.00025',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Kertas dan Cover',p:1062600,c10:0,c11p:0,c11n:0,total:0,sisa:1062600,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.01.0004',n:'Koordinasi dan Penyusunan DPA-SKPD',p:1518000,m:0,f:0,sk:'6.01.01.1.01',
+        details:[
+          {k:'5.1.02.01.001.00025',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Kertas dan Cover',p:1518000,c10:0,c11p:0,c11n:0,total:0,sisa:1518000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.01.0006',n:'Laporan Capaian Kinerja dan Ikhtisar Realisasi Kinerja SKPD',p:1170000,m:0,f:0,sk:'6.01.01.1.01',
+        details:[
+          {k:'5.1.02.01.001.00026',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Cetak',p:1170000,c10:0,c11p:0,c11n:0,total:0,sisa:1170000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.01.0007',n:'Evaluasi Kinerja Perangkat Daerah',p:770000,m:0,f:0,sk:'6.01.01.1.01',
+        details:[
+          {k:'5.1.02.01.001.00026',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Cetak',p:770000,c10:0,c11p:0,c11n:0,total:0,sisa:770000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.02',n:'Administrasi Keuangan Perangkat Daerah',p:18938956744,m:9505785740,f:8714066162,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.02.0001',n:'Penyediaan Gaji dan Tunjangan ASN',p:18795923744,m:9471105740,f:8679386162,sk:'6.01.01.1.02',
+        details:[
+          {k:'5.1.01.01.001.00001',n:'Belanja Gaji Pokok PNS',p:8410381000,c10:4041755460,c11p:0,c11n:578861480,total:4620616940,sisa:3789764060,delta:578861480},
+          {k:'5.1.01.01.001.00002',n:'Belanja Gaji Pokok PPPK',p:384274800,c10:185066057,c11p:0,c11n:23407432,total:208473489,sisa:175801311,delta:23407432},
+          {k:'5.1.01.01.002.00001',n:'Belanja Tunjangan Keluarga PNS',p:787796800,c10:305260936,c11p:0,c11n:43616797,total:348877733,sisa:438919067,delta:43616797},
+          {k:'5.1.01.01.002.00002',n:'Belanja Tunjangan Keluarga PPPK',p:19700800,c10:5339170,c11p:0,c11n:650612,total:5989782,sisa:13711018,delta:650612},
+          {k:'5.1.01.01.003.00001',n:'Belanja Tunjangan Jabatan PNS',p:158900000,c10:53100000,c11p:0,c11n:6300000,total:59400000,sisa:99500000,delta:6300000},
+          {k:'5.1.01.01.004.00001',n:'Belanja Tunjangan Fungsional PNS',p:989100000,c10:469975000,c11p:0,c11n:68085000,total:538060000,sisa:451040000,delta:68085000},
+          {k:'5.1.01.01.005.00001',n:'Belanja Tunjangan Fungsional Umum PNS',p:142870000,c10:63980000,c11p:0,c11n:9090000,total:73070000,sisa:69800000,delta:9090000},
+          {k:'5.1.01.01.005.00002',n:'Belanja Tunjangan Fungsional Umum PPPK',p:23170000,c10:11156249,c11p:0,c11n:1409999,total:12566248,sisa:10603752,delta:1409999},
+          {k:'5.1.01.01.006.00001',n:'Belanja Tunjangan Beras PNS',p:412649160,c10:189812820,c11p:0,c11n:27085080,total:216897900,sisa:195751260,delta:27085080},
+          {k:'5.1.01.01.006.00002',n:'Belanja Tunjangan Beras PPPK',p:21291480,c10:7308385,c11p:0,c11n:917320,total:8225705,sisa:13065775,delta:917320},
+          {k:'5.1.01.01.007.00001',n:'Belanja Tunjangan PPh/Tunjangan Khusus PNS',p:97145890,c10:38082593,c11p:0,c11n:31798077,total:69880670,sisa:27265220,delta:31798077},
+          {k:'5.1.01.01.007.00002',n:'Belanja Tunjangan PPh/Tunjangan Khusus PPPK',p:6295600,c10:379432,c11p:0,c11n:488701,total:868133,sisa:5427467,delta:488701},
+          {k:'5.1.01.01.008.00001',n:'Belanja Pembulatan Gaji PNS',p:1995588,c10:56070,c11p:0,c11n:8543,total:64613,sisa:1930975,delta:8543},
+          {k:'5.1.01.01.008.00002',n:'Belanja Pembulatan Gaji PPPK',p:1149800,c10:4557,c11p:0,c11n:537,total:5094,sisa:1144706,delta:537},
+          {k:'5.1.01.02.001.00001',n:'Tambahan Penghasilan berdasarkan Beban Kerja PNS',p:5829347314,c10:2627324898,c11p:0,c11n:0,total:2627324898,sisa:3202022416,delta:0},
+          {k:'5.1.01.02.003.00001',n:'Tambahan Penghasilan berdasarkan Kondisi Kerja PNS',p:1445670533,c10:653276689,c11p:0,c11n:0,total:653276689,sisa:792393844,delta:0},
+          {k:'5.1.01.02.005.00001',n:'Tambahan Penghasilan berdasarkan Prestasi Kerja PNS',p:64184977,c10:27507846,c11p:0,c11n:0,total:27507846,sisa:36677131,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.02.0005',n:'Koordinasi dan Penyusunan Laporan Keuangan Akhir Tahun SKPD',p:4313000,m:0,f:0,sk:'6.01.01.1.02',
+        details:[
+          {k:'5.1.02.01.001.00024',n:'Belanja Alat/Bahan untuk Kegiatan Kantor-Alat Tulis Kantor',p:300000,c10:0,c11p:0,c11n:0,total:0,sisa:300000,delta:0},
+          {k:'5.1.02.01.001.00025',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Kertas dan Cover',p:905400,c10:0,c11p:0,c11n:0,total:0,sisa:905400,delta:0},
+          {k:'5.1.02.01.001.00026',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Cetak',p:1511700,c10:0,c11p:0,c11n:0,total:0,sisa:1511700,delta:0},
+          {k:'5.1.02.01.001.00029',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Komputer',p:1595900,c10:0,c11p:0,c11n:0,total:0,sisa:1595900,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.02.0007',n:'Koordinasi dan Penyusunan Laporan Keuangan Bulanan/Triwulanan SKPD',p:138720000,m:34680000,f:34680000,sk:'6.01.01.1.02',
+        details:[
+          {k:'5.1.02.02.001.00080',n:'Belanja Honorarium Penanggungjawaban Pengelola Keuangan',p:138720000,c10:34680000,c11p:0,c11n:0,total:34680000,sisa:104040000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.03',n:'Administrasi Barang Milik Daerah pada Perangkat Daerah',p:38160000,m:7500000,f:7500000,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.03.0006',n:'Penatausahaan Barang Milik Daerah pada SKPD',p:38160000,m:7500000,f:7500000,sk:'6.01.01.1.03',
+        details:[
+          {k:'5.1.02.02.001.00001',n:'Belanja Jasa Pengelolaan BMD yang Tidak Menghasilkan Pendapatan',p:30000000,c10:7500000,c11p:0,c11n:0,total:7500000,sisa:22500000,delta:0},
+          {k:'5.1.02.02.001.00081',n:'Belanja Honorarium Pengadaan Barang/Jasa',p:8160000,c10:0,c11p:0,c11n:0,total:0,sisa:8160000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.05',n:'Administrasi Kepegawaian Perangkat Daerah',p:316905000,m:83449393,f:83449393,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.05.0005',n:'Monitoring, Evaluasi, dan Penilaian Kinerja Pegawai',p:48300000,m:0,f:0,sk:'6.01.01.1.05',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:48300000,c10:0,c11p:0,c11n:0,total:0,sisa:48300000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.05.0009',n:'Pendidikan dan Pelatihan Pegawai Berdasarkan Tugas dan Fungsi',p:138775000,m:44869267,f:44869267,sk:'6.01.01.1.05',
+        details:[
+          {k:'5.1.02.02.012.00001',n:'Belanja Kursus Singkat/Pelatihan',p:59000000,c10:20344408,c11p:0,c11n:0,total:20344408,sisa:38655592,delta:0},
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:40800000,c10:9982359,c11p:0,c11n:0,total:9982359,sisa:30817641,delta:0},
+          {k:'5.1.02.01.001.00026',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Cetak',p:3975000,c10:382500,c11p:0,c11n:0,total:382500,sisa:3592500,delta:0},
+          {k:'5.1.02.01.001.00052',n:'Belanja Makanan dan Minuman Rapat',p:13200000,c10:6960000,c11p:0,c11n:0,total:6960000,sisa:6240000,delta:0},
+          {k:'5.1.02.02.001.00003',n:'Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia',p:21800000,c10:7200000,c11p:0,c11n:0,total:7200000,sisa:14600000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.05.0011',n:'Bimbingan Teknis Implementasi Peraturan Perundang-Undangan',p:129830000,m:38580126,f:38580126,sk:'6.01.01.1.05',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:74580000,c10:38580126,c11p:0,c11n:0,total:38580126,sisa:35999874,delta:0},
+          {k:'5.1.02.02.012.00001',n:'Belanja Kursus Singkat/Pelatihan',p:50000000,c10:0,c11p:0,c11n:0,total:0,sisa:50000000,delta:0},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:5250000,c10:0,c11p:0,c11n:0,total:0,sisa:5250000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.06',n:'Administrasi Umum Perangkat Daerah',p:288861500,m:125499344,f:125499344,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.06.0001',n:'Penyediaan Komponen Instalasi Listrik/Penerangan Bangunan Kantor',p:9297700,m:0,f:0,sk:'6.01.01.1.06',
+        details:[
+          {k:'5.1.02.01.001.00031',n:'Belanja Alat/Bahan untuk Kegiatan Kantor-Alat Listrik',p:9297700,c10:0,c11p:0,c11n:0,total:0,sisa:9297700,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.06.0004',n:'Penyediaan Bahan Logistik Kantor',p:50190800,m:35019000,f:35019000,sk:'6.01.01.1.06',
+        details:[
+          {k:'5.1.02.01.001.00024',n:'Belanja Alat/Bahan untuk Kegiatan Kantor-Alat Tulis Kantor',p:21957800,c10:21388000,c11p:0,c11n:0,total:21388000,sisa:569800,delta:0},
+          {k:'5.1.02.01.001.00025',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Kertas dan Cover',p:17037000,c10:13631000,c11p:0,c11n:0,total:13631000,sisa:3406000,delta:0},
+          {k:'5.1.02.01.001.00029',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Komputer',p:11196000,c10:0,c11p:0,c11n:0,total:0,sisa:11196000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.06.0005',n:'Penyediaan Barang Cetakan dan Penggandaan',p:43511000,m:7298559,f:7298559,sk:'6.01.01.1.06',
+        details:[
+          {k:'5.1.02.01.001.00024',n:'Belanja Alat/Bahan untuk Kegiatan Kantor-Alat Tulis Kantor',p:10836000,c10:0,c11p:0,c11n:0,total:0,sisa:10836000,delta:0},
+          {k:'5.1.02.01.001.00026',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Bahan Cetak',p:6350000,c10:6298559,c11p:0,c11n:0,total:6298559,sisa:51441,delta:0},
+          {k:'5.1.02.01.004.00740',n:'Belanja Aset Tetap Lainnya-Barang Bercorak Kesenian/Kebudayaan/Olahraga-Barang Bercorak Kesenian-Barang Bercorak Kesenian Lainnya',p:17325000,c10:1000000,c11p:0,c11n:0,total:1000000,sisa:16325000,delta:0},
+          {k:'5.1.02.02.001.00055',n:'Belanja Jasa Iklan/Reklame, Film, dan Pemotretan',p:9000000,c10:0,c11p:0,c11n:0,total:0,sisa:9000000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.06.0006',n:'Penyediaan Bahan Bacaan dan Peraturan Perundang-Undangan',p:3078000,m:1000000,f:1000000,sk:'6.01.01.1.06',
+        details:[
+          {k:'5.1.02.02.001.00062',n:'Belanja Langganan Jurnal/Surat Kabar/Majalah',p:3078000,c10:1000000,c11p:0,c11n:0,total:1000000,sisa:2078000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.06.0008',n:'Fasilitasi Kunjungan Tamu',p:58290000,m:33856725,f:33856725,sk:'6.01.01.1.06',
+        details:[
+          {k:'5.1.02.01.001.00052',n:'Belanja Makanan dan Minuman Rapat',p:36180000,c10:18904090,c11p:0,c11n:0,total:18904090,sisa:17275910,delta:0},
+          {k:'5.1.02.01.001.00053',n:'Belanja Makanan dan Minuman Jamuan Tamu',p:22110000,c10:14952635,c11p:0,c11n:0,total:14952635,sisa:7157365,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.06.0009',n:'Penyelenggaraan Rapat Koordinasi dan Konsultasi SKPD',p:124494000,m:48325060,f:48325060,sk:'6.01.01.1.06',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:124494000,c10:48325060,c11p:0,c11n:0,total:48325060,sisa:76168940,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.07',n:'Pengadaan Barang Milik Daerah Penunjang Urusan Pemerintah Daerah',p:56971200,m:0,f:0,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.07.0006',n:'Pengadaan Peralatan dan Mesin Lainnya',p:56971200,m:0,f:0,sk:'6.01.01.1.07',
+        details:[
+          {k:'5.2.02.10.002.00003',n:'Belanja Modal Peralatan Personal Computer',p:56971200,c10:0,c11p:0,c11n:0,total:0,sisa:56971200,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.08',n:'Penyediaan Jasa Penunjang Urusan Pemerintahan Daerah',p:336124000,m:121453921,f:109838479,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.08.0001',n:'Penyediaan Jasa Surat Menyurat',p:5812000,m:0,f:0,sk:'6.01.01.1.08',
+        details:[
+          {k:'5.1.02.01.001.00027',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Benda Pos',p:2500000,c10:0,c11p:0,c11n:0,total:0,sisa:2500000,delta:0},
+          {k:'5.1.02.02.001.00064',n:'Belanja Paket/Pengiriman',p:3312000,c10:0,c11p:0,c11n:0,total:0,sisa:3312000,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.08.0002',n:'Penyediaan Jasa Komunikasi, Sumber Daya Air dan Listrik',p:258312000,m:91453921,f:79838479,sk:'6.01.01.1.08',
+        details:[
+          {k:'5.1.02.02.001.00061',n:'Belanja Tagihan Listrik',p:198912000,c10:76126399,c11p:0,c11n:11615442,total:87741841,sisa:111170159,delta:11615442},
+          {k:'5.1.02.02.001.00063',n:'Belanja Kawat/Faksimili/Internet/TV Berlangganan',p:59400000,c10:3712080,c11p:0,c11n:0,total:3712080,sisa:55687920,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.08.0004',n:'Penyediaan Jasa Pelayanan Umum Kantor',p:72000000,m:30000000,f:30000000,sk:'6.01.01.1.08',
+        details:[
+          {k:'5.1.02.02.001.00031',n:'Belanja Jasa Tenaga Keamanan',p:72000000,c10:30000000,c11p:0,c11n:0,total:30000000,sisa:42000000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.01.1.09',n:'Pemeliharaan Barang Milik Daerah Penunjang Urusan Pemerintahan Daerah',p:337076800,m:106235766,f:86735766,pg:'6.01'},
+      {t:'item',k:'6.01.01.1.09.0002',n:'Penyediaan Jasa Pemeliharaan, Biaya Pemeliharaan, Pajak dan Perizinan Kendaraan Dinas',p:137896800,m:56278000,f:56278000,sk:'6.01.01.1.09',
+        details:[
+          {k:'5.1.02.03.002.00035',n:'Belanja Pemeliharaan Alat Angkutan-Alat Angkutan Darat Bermotor-Kendaraan Dinas Bermotor Perorangan',p:58500000,c10:1063000,c11p:0,c11n:0,total:1063000,sisa:57437000,delta:0},
+          {k:'5.1.02.01.001.00004',n:'Belanja Bahan-Bahan Bakar dan Pelumas',p:79396800,c10:55215000,c11p:0,c11n:0,total:55215000,sisa:24181800,delta:0}
+        ]},
+      {t:'item',k:'6.01.01.1.09.0009',n:'Pemeliharaan/Rehabilitasi Gedung Kantor dan Bangunan Lainnya',p:180000000,m:39000000,f:19500000,sk:'6.01.01.1.09',
+        details:[
+          {k:'5.1.02.02.001.00030',n:'Belanja Jasa Tenaga Kebersihan',p:180000000,c10:19500000,c11p:0,c11n:19500000,total:39000000,sisa:141000000,delta:19500000}
+        ]},
+      {t:'item',k:'6.01.01.1.09.0010',n:'Pemeliharaan/Rehabilitasi Sarana dan Prasarana Gedung Kantor atau Bangunan Lainnya',p:19180000,m:10957766,f:10957766,sk:'6.01.01.1.09',
+        details:[
+          {k:'5.1.02.03.002.00121',n:'Belanja Pemeliharaan Alat Kantor dan Rumah Tangga-Alat Rumah Tangga-Alat Pendingin',p:8540000,c10:8435000,c11p:0,c11n:0,total:8435000,sisa:105000,delta:0},
+          {k:'5.1.02.03.002.00118',n:'Belanja Pemeliharaan Alat Kantor dan Rumah Tangga-Alat Rumah Tangga-Mebel',p:4800000,c10:2522766,c11p:0,c11n:0,total:2522766,sisa:2277234,delta:0},
+          {k:'5.1.02.03.002.00409',n:'Belanja Pemeliharaan Komputer-Peralatan Komputer-Peralatan Personal Computer',p:5840000,c10:0,c11p:0,c11n:0,total:0,sisa:5840000,delta:0}
+        ]},
+
+  {t:'prog',k:'6.02',n:'PROGRAM PENYELENGGARAAN PENGAWASAN',p:3317241000,m:1321174556,f:1227909556},
+    {t:'subkeg',k:'6.01.02.1.01',n:'Penyelenggaraan Pengawasan Internal',p:2627209000,m:938838196,f:871247196,pg:'6.02'},
+      {t:'item',k:'6.01.02.1.01.0001',n:'Pengawasan Kinerja Pemerintah Daerah',p:897284000,m:209404000,f:186744000,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:544034000,c10:98694000,c11p:0,c11n:22660000,total:121354000,sisa:422680000,delta:22660000},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:353250000,c10:82800000,c11p:5250000,c11n:5250000,total:88050000,sisa:265200000,delta:0}
+        ]},
+      {t:'item',k:'6.01.02.1.01.0002',n:'Pengawasan Keuangan Pemerintah Daerah',p:311399000,m:169099000,f:158464000,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:258149000,c10:114990000,c11p:5374000,c11n:16009000,total:130999000,sisa:127150000,delta:10635000},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:53250000,c10:38100000,c11p:0,c11n:0,total:38100000,sisa:15150000,delta:0}
+        ]},
+      {t:'item',k:'6.01.02.1.01.0003',n:'Reviu Laporan Kinerja',p:316030000,m:71425000,f:66925000,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:122680000,c10:26125000,c11p:0,c11n:0,total:26125000,sisa:96555000,delta:0},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:193350000,c10:40800000,c11p:0,c11n:4500000,total:45300000,sisa:148050000,delta:4500000}
+        ]},
+      {t:'item',k:'6.01.02.1.01.0004',n:'Reviu Laporan Keuangan',p:147602000,m:147058956,f:147058956,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:147602000,c10:147058956,c11p:0,c11n:0,total:147058956,sisa:543044,delta:0}
+        ]},
+      {t:'item',k:'6.01.02.1.01.0005',n:'Pengawasan Umum dan Teknis Kabupaten/Kota',p:627780000,m:158273240,f:147337240,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:604380000,c10:135937240,c11p:0,c11n:10936000,total:146873240,sisa:457506760,delta:10936000},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:23400000,c10:11400000,c11p:0,c11n:0,total:11400000,sisa:12000000,delta:0}
+        ]},
+      {t:'item',k:'6.01.02.1.01.0006',n:'Kerjasama Pengawasan Internal',p:108234000,m:85688000,f:66828000,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:97734000,c10:57228000,c11p:0,c11n:18860000,total:76088000,sisa:21646000,delta:18860000},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:10500000,c10:5250000,c11p:4350000,c11n:4350000,total:9600000,sisa:900000,delta:0}
+        ]},
+      {t:'item',k:'6.01.02.1.01.0007',n:'Monitoring dan Evaluasi Tindak Lanjut Hasil Pemeriksaan BPK RI dan APIP',p:218880000,m:97890000,f:97890000,sk:'6.01.02.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:181380000,c10:72810000,c11p:13080000,c11n:13080000,total:85890000,sisa:95490000,delta:0},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:37500000,c10:12000000,c11p:0,c11n:0,total:12000000,sisa:25500000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.02.1.02',n:'Penyelenggaraan Pengawasan dengan Tujuan Tertentu',p:690032000,m:382336360,f:356662360,pg:'6.02'},
+      {t:'item',k:'6.01.02.1.02.0001',n:'Penanganan Penyelesaian Kerugian Negara/Daerah',p:13400000,m:0,f:0,sk:'6.01.02.1.02',
+        details:[
+          {k:'5.1.02.01.001.00052',n:'Belanja Makanan dan Minuman Rapat',p:13400000,c10:0,c11p:0,c11n:0,total:0,sisa:13400000,delta:0}
+        ]},
+      {t:'item',k:'6.01.02.1.02.0002',n:'Pengawasan dengan Tujuan Tertentu',p:676632000,m:382336360,f:356662360,sk:'6.01.02.1.02',
+        details:[
+          {k:'5.1.02.02.001.00005',n:'Honorarium Pemberi Keterangan Ahli, Saksi Ahli, dan Beracara',p:39600000,c10:10800000,c11p:0,c11n:5400000,total:16200000,sisa:23400000,delta:5400000},
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:580782000,c10:291927360,c11p:12345000,c11n:32619000,total:324546360,sisa:256235640,delta:20274000},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:56250000,c10:41590000,c11p:0,c11n:0,total:41590000,sisa:14660000,delta:0}
+        ]},
+
+  {t:'prog',k:'6.03',n:'PROGRAM PERUMUSAN KEBIJAKAN, PENDAMPINGAN DAN ASISTENSI',p:697797000,m:222337458,f:217087458},
+    {t:'subkeg',k:'6.01.03.1.01',n:'Perumusan Kebijakan Teknis di Bidang Pengawasan dan Fasilitasi Pengawasan',p:202443000,m:43755000,f:43755000,pg:'6.03'},
+      {t:'item',k:'6.01.03.1.01.0001',n:'Perumusan Kebijakan Teknis di Bidang Pengawasan',p:154816000,m:43755000,f:43755000,sk:'6.01.03.1.01',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:154816000,c10:43755000,c11p:0,c11n:0,total:43755000,sisa:111061000,delta:0}
+        ]},
+      {t:'item',k:'6.01.03.1.01.0002',n:'Perumusan Kebijakan Teknis di Bidang Fasilitasi Pengawasan',p:47627000,m:0,f:0,sk:'6.01.03.1.01',
+        details:[
+          {k:'5.1.02.01.001.00024',n:'Belanja Alat/Bahan untuk Kegiatan Kantor-Alat Tulis Kantor',p:1050000,c10:0,c11p:0,c11n:0,total:0,sisa:1050000,delta:0},
+          {k:'5.1.02.01.001.00025',n:'Belanja Alat/Bahan untuk Kegiatan Kantor- Kertas dan Cover',p:2277000,c10:0,c11p:0,c11n:0,total:0,sisa:2277000,delta:0},
+          {k:'5.1.02.01.001.00052',n:'Belanja Makanan dan Minuman Rapat',p:30200000,c10:0,c11p:0,c11n:0,total:0,sisa:30200000,delta:0},
+          {k:'5.1.02.02.001.00003',n:'Honorarium Narasumber atau Pembahas, Moderator, Pembawa Acara, dan Panitia',p:14100000,c10:0,c11p:0,c11n:0,total:0,sisa:14100000,delta:0}
+        ]},
+    {t:'subkeg',k:'6.01.03.1.02',n:'Pendampingan dan Asistensi',p:495354000,m:178582458,f:173332458,pg:'6.03'},
+      {t:'item',k:'6.01.03.1.02.0001',n:'Pendampingan dan Asistensi Urusan Pemerintahan Daerah',p:145252000,m:89472458,f:89472458,sk:'6.01.03.1.02',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:65752000,c10:49278458,c11p:0,c11n:0,total:49278458,sisa:16473542,delta:0},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:79500000,c10:40194000,c11p:0,c11n:0,total:40194000,sisa:39306000,delta:0}
+        ]},
+      {t:'item',k:'6.01.03.1.02.0002',n:'Pendampingan, Asistensi, Verifikasi, dan Penilaian Reformasi Birokrasi',p:61218000,m:0,f:0,sk:'6.01.03.1.02',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:55818000,c10:0,c11p:0,c11n:0,total:0,sisa:55818000,delta:0},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:5400000,c10:0,c11p:0,c11n:0,total:0,sisa:5400000,delta:0}
+        ]},
+      {t:'item',k:'6.01.03.1.02.0003',n:'Koordinasi, Monitoring dan Evaluasi serta Verifikasi Pencegahan dan Pemberantasan Korupsi',p:115669000,m:30320000,f:25070000,sk:'6.01.03.1.02',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:100369000,c10:21470000,c11p:0,c11n:5250000,total:26720000,sisa:73649000,delta:5250000},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:15300000,c10:3600000,c11p:0,c11n:0,total:3600000,sisa:11700000,delta:0}
+        ]},
+      {t:'item',k:'6.01.03.1.02.0004',n:'Pendampingan, Asistensi dan Verifikasi Penegakan Integritas',p:173215000,m:58790000,f:58790000,sk:'6.01.03.1.02',
+        details:[
+          {k:'5.1.02.04.001.00001',n:'Belanja Perjalanan Dinas Biasa',p:145165000,c10:32390000,c11p:0,c11n:0,total:32390000,sisa:112775000,delta:0},
+          {k:'5.1.02.04.001.00003',n:'Belanja Perjalanan Dinas Dalam Kota',p:28050000,c10:26400000,c11p:0,c11n:0,total:26400000,sisa:1650000,delta:0}
+        ]},
+];
+
+// ─── Helpers ───────────────────────────────────────────────
+const expanded = new Set();
+const rp = n => (!n||n===0)?'0':Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const pct = (n,t) => (!t||!n)?'0.00':(n/t*100).toFixed(2);
+const barColor = p => p>=90?'#F87171':p>=50?'#FBBF24':p>=20?'#34D399':p>0?'#60A5FA':'#2A3A57';
+const fmtD = d => d===0?'<span style="color:#64748B">—</span>'
+  :`<span style="color:${d>0?'#A78BFA':'#F87171'};font-weight:700">${d>0?'+':''}${rp(d)}</span>`;
+function getStat(m,p,f){
+  if(!p) return '<span class="chip chip-flat">—</span>';
+  const pc=m/p*100;
+  if(pc>=90) return '<span class="chip chip-kritis">🔴 KRITIS</span>';
+  if(pc<20&&pc>0) return '<span class="chip chip-zero">⚠️ WARN</span>';
+  if(m===0) return '<span class="chip chip-flat">Nol</span>';
+  if(m>f) return '<span class="chip chip-up">↑ NAIK</span>';
+  return '<span class="chip chip-flat">TETAP</span>';
+}
+
+// ─── KPI ────────────────────────────────────────────────────
+function buildKPI(){
+  const tm=RAW_DATA.filter(x=>x.t==='prog').reduce((a,b)=>a+b.m,0);
+  const tf=RAW_DATA.filter(x=>x.t==='prog').reduce((a,b)=>a+b.f,0);
+  const d=tm-tf, sisa=PAGU_TOTAL-tm;
+  const kr=RAW_DATA.filter(x=>x.t==='subkeg'&&x.p&&(x.m/x.p*100)>=90).length;
+  const wr=RAW_DATA.filter(x=>x.t==='subkeg'&&x.p&&(x.m/x.p*100)<20&&x.m>0).length;
+  const naik=RAW_DATA.filter(x=>x.t==='subkeg'&&x.m>x.f).length;
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi c-blue"><div class="kpi-lbl">Total Pagu</div><div class="kpi-val">Rp ${rp(PAGU_TOTAL)}</div><div class="kpi-sub">TA 2026 (Tetap)</div></div>
+    <div class="kpi c-amber"><div class="kpi-lbl">Minggu Lalu</div><div class="kpi-val">Rp ${rp(tf)}</div><div class="kpi-sub">${pct(tf,PAGU_TOTAL)}% dari Pagu</div></div>
+    <div class="kpi c-green"><div class="kpi-lbl">12 Juni 2026</div><div class="kpi-val">Rp ${rp(tm)}</div><div class="kpi-sub">${pct(tm,PAGU_TOTAL)}% dari Pagu</div></div>
+    <div class="kpi c-purple"><div class="kpi-lbl">Selisih Minggu Ini</div><div class="kpi-val" style="color:#A78BFA">+Rp ${rp(d)}</div><div class="kpi-sub">Tambahan 7 hari terakhir</div><div class="kpi-badge-green">+${pct(d,PAGU_TOTAL)}% pagu</div></div>
+    <div class="kpi c-red"><div class="kpi-lbl">Sub-Keg Kritis/Warn</div><div class="kpi-val">${kr} Kritis / ${wr} Warning</div><div class="kpi-badge">dari 12 Sub-Kegiatan</div></div>
+    <div class="kpi c-green"><div class="kpi-lbl">Sub-Keg Naik Minggu Ini</div><div class="kpi-val" style="color:#34D399">${naik} Sub-Kegiatan</div><div class="kpi-badge-green">ada penambahan realisasi</div></div>`;
+  document.getElementById('cmpPrev').textContent=pct(tf,PAGU_TOTAL)+'%';
+  document.getElementById('cmpPrevVal').textContent='Rp '+rp(tf);
+  document.getElementById('cmpCurr').textContent=pct(tm,PAGU_TOTAL)+'%';
+  document.getElementById('cmpCurrVal').textContent='Rp '+rp(tm);
+  document.getElementById('cmpDelta').textContent='+'+pct(d,PAGU_TOTAL)+'%';
+  document.getElementById('cmpDeltaVal').textContent='+Rp '+rp(d);
+  document.getElementById('selisihBanner').innerHTML=`
+    <div class="sel-item"><div class="sel-lbl">Minggu Lalu</div><div class="sel-val" style="color:#60A5FA">Rp ${rp(tf)}</div><div class="sel-sub">${pct(tf,PAGU_TOTAL)}% pagu</div></div>
+    <div class="sel-divider"></div>
+    <div class="sel-item"><div class="sel-lbl">12 Juni 2026</div><div class="sel-val" style="color:#34D399">Rp ${rp(tm)}</div><div class="sel-sub">${pct(tm,PAGU_TOTAL)}% pagu</div></div>
+    <div class="sel-divider"></div>
+    <div class="sel-item"><div class="sel-lbl">Selisih Minggu</div><div class="sel-val" style="color:#A78BFA">+Rp ${rp(d)}</div><div class="sel-sub">+${((d/tf)*100).toFixed(1)}% dari minggu lalu</div></div>
+    <div class="sel-divider"></div>
+    <div class="sel-item"><div class="sel-lbl">Sisa Pagu</div><div class="sel-val" style="color:#FBBF24">Rp ${rp(sisa)}</div><div class="sel-sub">${pct(sisa,PAGU_TOTAL)}% belum terealisasi</div></div>
+    <div class="sel-divider"></div>
+    <div class="sel-item"><div class="sel-lbl">Sub-Keg Naik</div><div class="sel-val" style="color:#A78BFA">${naik} sub-keg</div><div class="sel-sub">ada kenaikan minggu ini</div></div>`;
+}
+
+// ─── Program Realisasi ───────────────────────────────────────
+function buildProgRealisasi(){
+  let h='';
+  RAW_DATA.filter(x=>x.t==='prog').forEach(p=>{
+    const pF=p.p?p.f/p.p*100:0,pM=p.p?p.m/p.p*100:0,bc=barColor(pM),d=p.m-p.f;
+    h+=`<div class="prog-item">
+      <div class="prog-hdr"><span class="prog-name">${p.k} — ${p.n}</span><span class="prog-pct" style="color:${bc}">${pM.toFixed(1)}%</span></div>
+      <div class="prog-detail">Pagu: Rp ${rp(p.p)} &nbsp;|&nbsp; <span style="color:#60A5FA">M.Lalu: ${pF.toFixed(1)}%</span> → <span style="color:${bc}">12 Jun: ${pM.toFixed(1)}%</span> &nbsp;<span style="color:#A78BFA;font-weight:700">[+Rp ${rp(d)}]</span></div>
+      <div style="display:flex;gap:2px;margin-top:3px;align-items:center"><div style="font-size:8px;color:#60A5FA;width:44px">M.Lalu</div><div class="prog-bar-bg" style="flex:1"><div class="prog-bar" style="width:${Math.min(pF,100)}%;background:#60A5FA"></div></div></div>
+      <div style="display:flex;gap:2px;margin-top:2px;align-items:center"><div style="font-size:8px;color:${bc};width:44px">12 Jun</div><div class="prog-bar-bg" style="flex:1"><div class="prog-bar" style="width:${Math.min(pM,100)}%;background:${bc}"></div></div></div>
+    </div>`;
+  });
+  document.getElementById('progRealisasi').innerHTML=h;
+}
+
+// ─── Alerts ─────────────────────────────────────────────────
+function buildAlerts(){
+  const subs=RAW_DATA.filter(x=>x.t==='subkeg').sort((a,b)=>(b.p?b.m/b.p:0)-(a.p?a.m/a.p:0));
+  let h='';
+  subs.forEach(sub=>{
+    const pc=sub.p?sub.m/sub.p*100:0,d=sub.m-sub.f;
+    const cls=pc>=90?'danger':pc<20&&pc>0?'warn':'ok';
+    const naik=d>0?`<span style="color:#A78BFA;font-weight:700">↑ +Rp ${rp(d)}</span>`:`<span style="color:#64748B">tidak ada perubahan</span>`;
+    h+=`<div class="alert-item ${cls}">
+      <div class="adot ${cls}"></div>
+      <div class="atext"><strong>${sub.k}</strong>
+        <span class="aval">${sub.n.substring(0,46)}</span>
+        <span class="aval delta">${naik} minggu ini</span></div>
+      <div class="apct" style="color:${barColor(pc)}">${pc.toFixed(1)}%</div>
+    </div>`;
+  });
+  document.getElementById('alertsDiv').innerHTML=h;
+}
+
+// ─── Table ───────────────────────────────────────────────────
+function buildTable(){
+  let h='';
+  RAW_DATA.forEach(item=>{
+    if(item.t!=='prog') return;
+    const isExp=expanded.has(item.k);
+    const pc=item.p?item.m/item.p*100:0,sisa=item.p-item.m,d=item.m-item.f,bc=barColor(pc);
+    h+=`<tr class="level-prog" style="cursor:pointer" onclick="tog('${item.k}')">
+      <td class="kd"><span class="tog">${isExp?'▼':'▶'}</span>${item.k}</td><td style="font-weight:600">${item.n}</td>
+      <td class="r">${rp(item.p)}</td><td class="r" style="color:#60A5FA">${rp(item.f)}</td>
+      <td class="r" style="color:#34D399;font-weight:600">${rp(item.m)}</td><td class="sel-td">${fmtD(d)}</td>
+      <td class="r" style="color:#64748B">${rp(sisa)}</td>
+      <td><span class="bar-mini"><span class="bar-fill" style="width:${Math.min(pc,100)}%;background:${bc}"></span></span><span style="font-size:9px;color:${bc}">${pc.toFixed(1)}%</span></td>
+      <td>${getStat(item.m,item.p,item.f)}</td></tr>`;
+    if(!isExp) return;
+    RAW_DATA.filter(x=>x.t==='subkeg'&&x.pg===item.k).forEach(sub=>{
+      const isSubExp=expanded.has(sub.k);
+      const pc2=sub.p?sub.m/sub.p*100:0,sisa2=sub.p-sub.m,d2=sub.m-sub.f,bc2=barColor(pc2);
+      h+=`<tr class="level-subkeg${d2>0?' naik-minggu':''}" style="cursor:pointer" onclick="tog('${sub.k}')">
+        <td class="kd" style="padding-left:22px"><span class="tog">${isSubExp?'▼':'▶'}</span>${sub.k}</td><td style="font-weight:500">${sub.n}</td>
+        <td class="r">${rp(sub.p)}</td><td class="r" style="color:#60A5FA">${rp(sub.f)}</td>
+        <td class="r" style="color:#34D399;font-weight:600">${rp(sub.m)}</td><td class="sel-td">${fmtD(d2)}</td>
+        <td class="r" style="color:#64748B">${rp(sisa2)}</td>
+        <td><span class="bar-mini"><span class="bar-fill" style="width:${Math.min(pc2,100)}%;background:${bc2}"></span></span><span style="font-size:9px;color:${bc2}">${pc2.toFixed(1)}%</span></td>
+        <td>${getStat(sub.m,sub.p,sub.f)}</td></tr>`;
+      if(!isSubExp) return;
+      RAW_DATA.filter(x=>x.t==='item'&&x.sk===sub.k).forEach(it=>{
+        const pc3=it.p?it.m/it.p*100:0,sisa3=it.p-it.m,d3=it.m-it.f,bc3=barColor(pc3);
+        const hasClick=d3>0&&it.details&&it.details.length>0;
+        const cc=hasClick?'clickable-item':'';
+        const ca=hasClick?`onclick="showModal('${it.k}')" title="🔍 Klik untuk detail rekening SPJ"`:'';
+        h+=`<tr class="level-item ${cc}${d3>0?' naik-minggu':''}" ${ca}>
+          <td class="kd" style="padding-left:42px">${it.k}</td>
+          <td class="nama-td">${hasClick?'🔍 ':''}${it.n.substring(0,64)}</td>
+          <td class="r">${rp(it.p)}</td><td class="r" style="color:#60A5FA">${rp(it.f)}</td>
+          <td class="r" style="color:#34D399;font-weight:600">${rp(it.m)}</td><td class="sel-td">${fmtD(d3)}</td>
+          <td class="r" style="color:#64748B">${rp(sisa3)}</td>
+          <td><span class="bar-mini"><span class="bar-fill" style="width:${Math.min(pc3,100)}%;background:${bc3}"></span></span><span style="font-size:9px;color:${bc3}">${pc3.toFixed(1)}%</span></td>
+          <td>${getStat(it.m,it.p,it.f)}</td></tr>`;
+      });
+    });
+  });
+  document.getElementById('tbody').innerHTML=h;
+}
+function tog(k){expanded.has(k)?expanded.delete(k):expanded.add(k);buildTable();}
+
+// ─── Modal Detail ─────────────────────────────────────────────
+function showModal(kode){
+  const it=RAW_DATA.find(x=>x.k===kode&&x.t==='item');
+  if(!it) return;
+  const d=it.m-it.f, pc=(it.p?(it.m/it.p*100):0).toFixed(2);
+  let h=`
+    <div style="background:rgba(56,189,248,0.07);padding:12px 14px;border-radius:10px;margin-bottom:12px;border-left:4px solid #38BDF8">
+      <div style="font-size:9px;color:#64748B;font-weight:500;text-transform:uppercase;margin-bottom:2px">KODE ITEM</div>
+      <div style="font-size:13px;font-weight:700;color:#38BDF8;font-family:monospace">${it.k}</div>
+      <div style="font-size:11px;color:#CBD5E1;margin-top:2px">${it.n}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px">
+      <div style="background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.16);border-radius:8px;padding:9px;text-align:center">
+        <div style="font-size:8px;color:#64748B;margin-bottom:2px;text-transform:uppercase;font-weight:600">Minggu Lalu</div>
+        <div style="font-size:11px;font-weight:600;color:#60A5FA;font-family:monospace">Rp ${rp(it.f)}</div>
+      </div>
+      <div style="background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.16);border-radius:8px;padding:9px;text-align:center">
+        <div style="font-size:8px;color:#64748B;margin-bottom:2px;text-transform:uppercase;font-weight:600">12 Jun 2026</div>
+        <div style="font-size:11px;font-weight:600;color:#34D399;font-family:monospace">Rp ${rp(it.m)}</div>
+      </div>
+      <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.16);border-radius:8px;padding:9px;text-align:center">
+        <div style="font-size:8px;color:#64748B;margin-bottom:2px;text-transform:uppercase;font-weight:600">Selisih Minggu Ini</div>
+        <div style="font-size:11px;font-weight:700;color:#A78BFA;font-family:monospace">${d>=0?'+':''}Rp ${rp(Math.abs(d))}</div>
+      </div>
+      <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(148,163,184,0.14);border-radius:8px;padding:9px;text-align:center">
+        <div style="font-size:8px;color:#64748B;margin-bottom:2px;text-transform:uppercase;font-weight:600">% Pagu</div>
+        <div style="font-size:11px;font-weight:600;color:#38BDF8">${pc}%</div>
+      </div>
+    </div>
+    <div style="font-size:10px;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">
+      📋 Detail Rincian Rekening SPJ (${(it.details||[]).length} rekening)
+    </div>`;
+
+  const itemNaik = (it.m - it.f) > 0;
+  const anyDetNaik = (it.details||[]).some(x=>x.delta>0);
+  if(itemNaik && !anyDetNaik){
+    h+=`<div style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.30);border-left:3px solid #FBBF24;border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:10.5px;color:#FBBF24;line-height:1.45">
+      <strong style="display:block;margin-bottom:2px;font-weight:600">ℹ️ Catatan</strong>
+      <span style="color:#E2E8F0">Kenaikan <strong style="color:#A78BFA">+Rp ${rp(it.m-it.f)}</strong> bersifat <em>penyesuaian pencatatan periode s.d. Mei</em> — belum ada realisasi tercatat di Juni untuk rekening item ini.</span>
+    </div>`;
+  }
+
+  (it.details||[]).forEach(det=>{
+    const isUp=det.delta>0;
+    h+=`<div class="rek-card${isUp?' naik':''}">
+      <div class="rek-hdr${isUp?' naik':''}">
+        <div class="rek-kode">${det.k}</div>
+        <div class="rek-nama">${det.n}</div>
+      </div>
+      <div class="rek-rows">
+        <div class="rek-row">
+          <span class="rek-lbl">Realisasi s.d. April <small style="color:#64748B">(sebelum Mei · Kol.10 SPJ)</small></span>
+          <span class="rek-val blue">Rp ${rp(det.c10)}</span>
+        </div>
+        <div class="rek-row">
+          <span class="rek-lbl">Realisasi Awal Mei <small style="color:#64748B">(per ${PREV_DATE} · belum ada SPJ Mei)</small></span>
+          <span class="rek-val blue">${det.c11p>0?'Rp '+rp(det.c11p):'<span style="color:#64748B">—</span>'}</span>
+        </div>
+        <div class="rek-row">
+          <span class="rek-lbl">Realisasi per ${CURR_DATE} <small style="color:#64748B">(realisasi Mei · Kol.11 SPJ ini)</small></span>
+          <span class="rek-val green">Rp ${rp(det.c11n)}</span>
+        </div>
+        <div class="rek-row" style="background:rgba(148,163,184,0.06);font-weight:600">
+          <span class="rek-lbl">Total Realisasi Saat Ini <small style="color:#64748B">(s.d. April + Mei · Kol.13 SPJ)</small></span>
+          <span class="rek-val green">Rp ${rp(det.total)}</span>
+        </div>
+        <div class="rek-row">
+          <span class="rek-lbl">Sisa Anggaran</span>
+          <span class="rek-val amber">Rp ${rp(det.sisa)}</span>
+        </div>
+        <div class="rek-row${isUp?' highlight':''}">
+          <span class="rek-lbl" style="${isUp?'font-weight:600;color:#A78BFA':''}">Kenaikan Minggu Ini <small style="color:#64748B">(Kol.11 baru − Kol.11 lalu)</small></span>
+          <span class="rek-val${isUp?' up':' zero'}">${isUp?'+Rp '+rp(det.delta):'—'}</span>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('modalBody').innerHTML=h;
+  const m=document.getElementById('detailModal');
+  m.style.display='flex';
+  m.onclick=e=>{if(e.target===m)closeModal();};
+}
+function closeModal(){document.getElementById('detailModal').style.display='none';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// ─── Init ────────────────────────────────────────────────────
+buildKPI(); buildProgRealisasi(); buildAlerts(); buildTable();
+document.getElementById('tgl').textContent=new Date().toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+</script>
+</body>
+</html>
