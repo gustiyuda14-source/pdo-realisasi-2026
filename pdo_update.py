@@ -65,10 +65,14 @@ def parse_money(s: str) -> int:
     if not s or str(s).strip() in ("-", "", "None", "Rp0,00"):
         return 0
     s = re.sub(r"^Rp\s*", "", str(s).strip())
-    s = re.sub(r",\d+$", "", s)
-    s = s.replace(".", "")
+    if ',' in s and '.' in s:
+        s = s.replace('.', '').replace(',', '.')
+    elif ',' in s:
+        s = s.replace(',', '.')
+    else:
+        s = s.replace('.', '')
     try:
-        return int(s)
+        return int(round(float(s)))
     except ValueError:
         return 0
 
@@ -320,21 +324,53 @@ def build_plan(baseline: dict, pdf_data: dict, c11p_mode: str = "rebase") -> dic
         used = set()
 
         def compute_det(rk: str, rows: list, fallback_pagu: int, fallback_old: dict | None):
-            """Compute c10/c11n/etc for a detail, including all realization paths."""
+            """Compute c10/c11p/c11n/total/delta untuk satu rekening detail.
+
+            Prinsip TOTAL-BASED (berlaku universal ke SEMUA section: LS-Gaji /
+            LS-Barang&Jasa / UP-GU-TU):
+
+              `total` (kumulatif semua jalur realisasi = Kol.13 PDF) adalah
+              ground-truth dan SELALU benar. Delta mingguan diturunkan dari selisih
+              total antar-snapshot (total_baru − total_lama), BUKAN dari kolom
+              'bulan ini' PDF. Alasannya: SIPD me-reset kolom 'bulan ini' ke 0 saat
+              transisi bulan (terbukti pada LS Gaji: Kol.5 → 0, seluruh realisasi
+              didorong ke Kol.4) sehingga realisasi riil "hilang" bila kita baca
+              kolom mentah. Pendekatan total-based ini IDENTIK hasilnya dengan
+              kolom-based di minggu normal, tapi kebal terhadap anomali reset kolom
+              di section manapun. Selisih yang "hilang" itu justru direkonstruksi
+              sebagai realisasi bulan berjalan — nilai yang seharusnya SIPD sediakan.
+            """
             c10_sum = sum(r["c10"] + r["ls_gaji_lalu"] + r["ls_bj_lalu"] for r in rows)
             c11_sum = sum(r["c11"] + r["ls_gaji_kini"] + r["ls_bj_kini"] for r in rows)
             p_sum = sum(r["pagu"] for r in rows)
             p_use = p_sum if p_sum > 0 else fallback_pagu
-            total_d = c10_sum + c11_sum
+            total_d = c10_sum + c11_sum        # kumulatif = Kol.13, selalu benar
             sisa_d = p_use - total_d
-            if c11p_mode == "rolling" and fallback_old and not bulan_transition:
-                c11p_val = fallback_old["c11n"]
-            else:
-                c11p_val = 0
-            delta = c11_sum - c11p_val
             nama = rows[0]["nama"] if rows else (fallback_old["n"] if fallback_old else rk)
-            return dict(k=rk, n=nama, p=p_use, c10=c10_sum, c11p=c11p_val,
-                        c11n=c11_sum, total=total_d, sisa=sisa_d, delta=delta)
+
+            if bulan_transition and fallback_old is not None:
+                # Bulan baru: anchor c10 = total snapshot lalu (BUKAN Kol.10 PDF mentah,
+                # yang saat transisi bisa tercampur realisasi telat bulan lalu). Selisih
+                # total masuk sebagai realisasi bulan baru (c11n); c11p mulai dari 0.
+                c10_val  = fallback_old["total"]
+                c11p_val = 0
+                c11n_val = total_d - c10_val
+            elif fallback_old is not None:
+                # Bulan sama: bawa anchor c10 dari baseline (tetap sepanjang bulan),
+                # c11n = akumulasi bulan ini s.d. sekarang = total − anchor,
+                # c11p = c11n minggu lalu. (rebase mode: c11p paksa 0 → delta = c11n penuh)
+                c10_val  = fallback_old["c10"]
+                c11n_val = total_d - c10_val
+                c11p_val = 0 if c11p_mode == "rebase" else fallback_old["c11n"]
+            else:
+                # Rekening baru tanpa histori: percaya kolom PDF apa adanya.
+                c10_val  = c10_sum
+                c11p_val = 0
+                c11n_val = c11_sum
+
+            delta = c11n_val - c11p_val
+            return dict(k=rk, n=nama, p=p_use, c10=c10_val, c11p=c11p_val,
+                        c11n=c11n_val, total=total_d, sisa=sisa_d, delta=delta)
 
         # 1. Iterate gu5 details first (preserve order)
         for od in old_dets:
@@ -617,7 +653,8 @@ def verify(html: str, expected_total: int | None = None) -> dict:
     raw_objs = split_balanced(mblock.group(1))
     e3 = 0
     items_naik_det = 0
-    GAJI = "6.01.01.1.02.0001"
+    # Tidak ada lagi bypass GAJI: sejak delta total-based, item.δ = Σdet.δ juga
+    # konsisten untuk rekening gaji (5.1.01.*). Cek e3 kini berlaku ke semua item.
     for obj in raw_objs:
         tm = re.match(r"\{t:'item',k:'([\d\.]+)'", obj)
         if not tm:
@@ -626,8 +663,6 @@ def verify(html: str, expected_total: int | None = None) -> dict:
         sum_delta = sum(int(d.group(9)) for d in det_re.finditer(obj))
         if sum_delta > 0:
             items_naik_det += 1
-        if k == GAJI:
-            continue
         item_delta = items[k]["m"] - items[k]["f"]
         if abs(item_delta - sum_delta) > 1:
             e3 += 1
