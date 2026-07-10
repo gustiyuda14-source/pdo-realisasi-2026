@@ -11,3 +11,5 @@ arsip_lokal/
 backup_script/
 dokumentasi/
 pdf_fungsional/
+.vercel
+.env*
