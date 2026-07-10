@@ -42,7 +42,9 @@ if hasattr(sys.stdout, "buffer"):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 # ─── Constants ──────────────────────────────────────────────
-PAGU_TOTAL = 24335335344
+# PAGU_TOTAL TIDAK di-hardcode — dihitung tiap run dari kolom Anggaran PDF
+# (item level, roll-up ke subkeg/prog/total) dan di-cross-check ke baris
+# grand-total "BELANJA DAERAH" pada PDF. Lihat build_plan() & verify().
 PROJ = Path(__file__).resolve().parent
 DEFAULT_REPO = "pdo-realisasi-2026"
 
@@ -139,6 +141,7 @@ def extract_pdf(pdf_path: Path) -> dict:
     rek_data: list = []
     current_item: str | None = None
     bulan_pdf: str | None = None
+    total_row: dict | None = None
 
     with pdfplumber.open(pdf_path) as pdf:
         # Halaman 1: deteksi "Bulan : <X>"
@@ -168,7 +171,9 @@ def extract_pdf(pdf_path: Path) -> dict:
                         total=parse_money(row[12]),
                         sisa=parse_money(row[13]),
                     )
-                    if SUB.match(kode):
+                    if kode == "5" and "BELANJA DAERAH" in row[1].upper():
+                        total_row = rec
+                    elif SUB.match(kode):
                         sub_data[kode] = rec
                     elif KEG.match(kode):
                         item_data[kode] = rec
@@ -177,7 +182,11 @@ def extract_pdf(pdf_path: Path) -> dict:
                         rec["parent_item"] = current_item
                         rek_data.append(rec)
 
-    return dict(sub=sub_data, item=item_data, rek=rek_data, bulan_pdf=bulan_pdf)
+    return dict(
+        sub=sub_data, item=item_data, rek=rek_data, bulan_pdf=bulan_pdf,
+        total_anggaran=total_row["pagu"] if total_row else None,
+        total_realisasi=total_row["total"] if total_row else None,
+    )
 
 
 # ─── Baseline Parsing ───────────────────────────────────────
@@ -307,12 +316,18 @@ def build_plan(baseline: dict, pdf_data: dict, c11p_mode: str = "rebase") -> dic
     bulan_transition = bool(prev_d and pdf_bulan_num and pdf_bulan_num != prev_d[1])
 
     item_new = {}
+    pagu_revisions = []
     for nd in baseline["nodes"]:
         if nd["type"] != "item":
             continue
         k = nd["kode"]
         p_pdf = item_pdf.get(k)
         m_new = p_pdf["total"] if p_pdf else nd["m_old"]
+        # Pagu di-refresh dari PDF tiap run (anggaran perubahan/pergeseran
+        # harus ikut ter-propagate) — bukan dibekukan dari baseline lama.
+        p_new = p_pdf["pagu"] if p_pdf and p_pdf["pagu"] > 0 else nd["p"]
+        if p_new != nd["p"]:
+            pagu_revisions.append((k, nd["nama"], nd["p"], p_new))
 
         pdf_rek = rek_by_parent.get(k, [])
         old_dets = nd["details_old"]
@@ -395,11 +410,11 @@ def build_plan(baseline: dict, pdf_data: dict, c11p_mode: str = "rebase") -> dic
             new_dets.append(compute_det(rk, rows, 0, None))
 
         item_new[k] = dict(
-            kode=k, nama=nd["nama"], p=nd["p"], sk=nd["sk"],
+            kode=k, nama=nd["nama"], p=p_new, sk=nd["sk"],
             m_new=m_new, f_new=nd["m_old"], details=new_dets,
         )
 
-    # Roll up sub-keg
+    # Roll up sub-keg (pagu = Σ item.p, sama seperti roll-up realisasi)
     subkeg_new = {}
     for nd in baseline["nodes"]:
         if nd["type"] != "subkeg":
@@ -407,10 +422,12 @@ def build_plan(baseline: dict, pdf_data: dict, c11p_mode: str = "rebase") -> dic
         k = nd["kode"]
         items_under = [it for it in item_new.values() if it["sk"] == k]
         m_sum = sum(it["m_new"] for it in items_under)
-        subkeg_new[k] = dict(kode=k, nama=nd["nama"], p=nd["p"], pg=nd["pg"],
+        p_sum = sum(it["p"] for it in items_under)
+        subkeg_new[k] = dict(kode=k, nama=nd["nama"],
+                             p=p_sum if items_under else nd["p"], pg=nd["pg"],
                              m_new=m_sum, f_new=nd["m_old"])
 
-    # Roll up prog
+    # Roll up prog (pagu = Σ subkeg.p)
     prog_new = {}
     for nd in baseline["nodes"]:
         if nd["type"] != "prog":
@@ -418,11 +435,18 @@ def build_plan(baseline: dict, pdf_data: dict, c11p_mode: str = "rebase") -> dic
         k = nd["kode"]
         subs_under = [s for s in subkeg_new.values() if s["pg"] == k]
         m_sum = sum(s["m_new"] for s in subs_under)
-        prog_new[k] = dict(kode=k, nama=nd["nama"], p=nd["p"], m_new=m_sum, f_new=nd["m_old"])
+        p_sum = sum(s["p"] for s in subs_under)
+        prog_new[k] = dict(kode=k, nama=nd["nama"],
+                           p=p_sum if subs_under else nd["p"],
+                           m_new=m_sum, f_new=nd["m_old"])
 
     return dict(prog=prog_new, subkeg=subkeg_new, item=item_new,
                 bulan_transition=bulan_transition,
-                pdf_bulan=pdf_bulan_full)
+                pdf_bulan=pdf_bulan_full,
+                total_pagu=sum(p["p"] for p in prog_new.values()),
+                total_anggaran_pdf=pdf_data.get("total_anggaran"),
+                total_realisasi_pdf=pdf_data.get("total_realisasi"),
+                _pagu_revisions=pagu_revisions)
 
 
 # ─── HTML Formatter & Template ──────────────────────────────
@@ -495,6 +519,8 @@ def apply_template(baseline: dict, plan: dict, new_curr: str) -> str:
                   f"const PREV_DATE  = '{baseline['curr_date']}'", html, count=1)
     html = re.sub(r"const CURR_DATE\s*=\s*'[^']*'",
                   f"const CURR_DATE  = '{new_curr}'", html, count=1)
+    html = re.sub(r"const PAGU_TOTAL\s*=\s*\d+",
+                  f"const PAGU_TOTAL = {plan['total_pagu']}", html, count=1)
 
     # Parse dates
     prev_d = parse_date(baseline["curr_date"])     # snapshot lama
@@ -634,7 +660,7 @@ def apply_template(baseline: dict, plan: dict, new_curr: str) -> str:
 
 
 # ─── Verify ─────────────────────────────────────────────────
-def verify(html: str, expected_total: int | None = None) -> dict:
+def verify(html: str, expected_total: int | None = None, expected_pagu: int | None = None) -> dict:
     """Cross-check konsistensi output."""
     prog_re = re.compile(r"\{t:'prog',k:'([\d\.]+)',n:'((?:[^'\\]|\\.)*)',p:(\d+),m:(\d+),f:(\d+)")
     sub_re  = re.compile(r"\{t:'subkeg',k:'([\d\.]+)',n:'((?:[^'\\]|\\.)*)',p:(\d+),m:(\d+),f:(\d+),pg:'([\d\.]+)'")
@@ -669,12 +695,14 @@ def verify(html: str, expected_total: int | None = None) -> dict:
 
     tm_total = sum(p["m"] for p in progs.values())
     tf_total = sum(p["f"] for p in progs.values())
+    tp_total = sum(p["p"] for p in progs.values())
     e4_match = (expected_total is None) or (tm_total == expected_total)
+    e5_match = (expected_pagu is None) or (tp_total == expected_pagu)
 
     return dict(
         progs=progs, subs=subs, items=items,
-        e1=e1, e2=e2, e3=e3, e4_match=e4_match,
-        total_m=tm_total, total_f=tf_total,
+        e1=e1, e2=e2, e3=e3, e4_match=e4_match, e5_match=e5_match,
+        total_m=tm_total, total_f=tf_total, total_p=tp_total,
         items_naik_det=items_naik_det,
     )
 
@@ -685,9 +713,9 @@ def build_diff_report(baseline: dict, plan: dict, ver: dict, new_curr: str, pdf_
     out = []
     out.append(f"# Update Mingguan PDO — {new_curr}\n")
     out.append(f"**Snapshot sebelumnya:** {baseline['curr_date']}  ")
-    out.append(f"**Total Pagu:** Rp {fmt_rp(PAGU_TOTAL)}  ")
-    out.append(f"**Realisasi {baseline['curr_date']}:** Rp {fmt_rp(ver['total_f'])} ({ver['total_f']/PAGU_TOTAL*100:.2f}% pagu)  ")
-    out.append(f"**Realisasi {new_curr}:** Rp {fmt_rp(ver['total_m'])} ({ver['total_m']/PAGU_TOTAL*100:.2f}% pagu)  ")
+    out.append(f"**Total Pagu:** Rp {fmt_rp(plan['total_pagu'])}  ")
+    out.append(f"**Realisasi {baseline['curr_date']}:** Rp {fmt_rp(ver['total_f'])} ({ver['total_f']/plan['total_pagu']*100:.2f}% pagu)  ")
+    out.append(f"**Realisasi {new_curr}:** Rp {fmt_rp(ver['total_m'])} ({ver['total_m']/plan['total_pagu']*100:.2f}% pagu)  ")
     out.append(f"**Kenaikan 7 hari:** +Rp {fmt_rp(ver['total_m'] - ver['total_f'])}\n")
 
     if plan["bulan_transition"]:
@@ -695,6 +723,10 @@ def build_diff_report(baseline: dict, plan: dict, ver: dict, new_curr: str, pdf_
 
     # Cross-check
     cek_status = "✅ MATCH" if ver["e4_match"] else f"❌ MISMATCH (selisih {ver['total_m']-pdf_total:+,})"
+    pagu_pdf = plan.get("total_anggaran_pdf")
+    pagu_status = ("✅ MATCH" if ver["e5_match"]
+                   else f"❌ MISMATCH (selisih {ver['total_p']-pagu_pdf:+,})" if pagu_pdf is not None
+                   else "⏭ (grand-total row tak terbaca dari PDF)")
     e1, e2, e3 = ver["e1"], ver["e2"], ver["e3"]
     s1 = "✅ OK" if e1 == 0 else f"❌ {e1} mismatch"
     s2 = "✅ OK" if e2 == 0 else f"❌ {e2} mismatch"
@@ -704,6 +736,15 @@ def build_diff_report(baseline: dict, plan: dict, ver: dict, new_curr: str, pdf_
     out.append(f"| 2. sub.m = Σitem.m | {s2} |\n")
     out.append(f"| 3. item.δ = Σdet.δ (non-gaji) | {s3} |\n")
     out.append(f"| 4. Total m = PDF Kol.13 | {cek_status} |\n")
+    out.append(f"| 5. Total pagu = PDF Anggaran | {pagu_status} |\n")
+
+    if plan.get("_pagu_revisions"):
+        out.append("\n## ⚠️ Revisi Pagu Terdeteksi\n\n")
+        out.append("Anggaran berubah dari snapshot sebelumnya (anggaran perubahan/pergeseran):\n\n")
+        out.append("| Kegiatan | Uraian | Pagu Lama | Pagu Baru | Δ |\n|---|---|---:|---:|---:|\n")
+        for k, nama, old_p, new_p in plan["_pagu_revisions"]:
+            d = new_p - old_p
+            out.append(f"| `{k}` | {nama[:50]} | {fmt_rp(old_p)} | {fmt_rp(new_p)} | {'+' if d >= 0 else ''}{fmt_rp(d)} |\n")
 
     # Sub-keg naik
     out.append("\n## Sub-Kegiatan dengan Kenaikan\n\n")
@@ -856,10 +897,14 @@ def deploy_pages(out_html_path: Path, report_md_path: Path, plan: dict, ver: dic
             # Parse total m from prog rows
             prog_re = re.compile(r"\{t:'prog'[^}]*m:(\d+)")
             total = sum(int(x.group(1)) for x in prog_re.finditer(html))
+            # Pagu per-snapshot dibaca dari konstanta HTML file itu sendiri
+            # (bukan total run sekarang) — akurat lintas revisi anggaran.
+            pm = re.search(r"const PAGU_TOTAL\s*=\s*(\d+)", html)
+            snap_pagu = int(pm.group(1)) if pm else plan["total_pagu"]
             snapshots.append(dict(
                 filename=f.name, date_label=curr,
                 total_m=fmt_rp(total),
-                pct=f"{total/PAGU_TOTAL*100:.2f}",
+                pct=f"{total/snap_pagu*100:.2f}",
             ))
         except Exception:
             continue
@@ -999,14 +1044,18 @@ def build_validation_dict(baseline, plan, ver, new_curr, pdf_path, out_path, rep
         new_date=new_curr,
         bulan_transition=plan["bulan_transition"],
         pdf_bulan=plan["pdf_bulan"],
-        total_pagu=PAGU_TOTAL,
+        total_pagu=plan["total_pagu"],
         total_f=ver["total_f"],
         total_m=ver["total_m"],
         delta_total=ver["total_m"] - ver["total_f"],
-        pct_pagu=round(ver["total_m"] / PAGU_TOTAL * 100, 2),
-        pct_pagu_prev=round(ver["total_f"] / PAGU_TOTAL * 100, 2),
-        cross_check=dict(e1=ver["e1"], e2=ver["e2"], e3=ver["e3"], e4_match=ver["e4_match"]),
-        all_checks_pass=(ver["e1"] == 0 and ver["e2"] == 0 and ver["e3"] == 0 and ver["e4_match"]),
+        pct_pagu=round(ver["total_m"] / plan["total_pagu"] * 100, 2),
+        pct_pagu_prev=round(ver["total_f"] / plan["total_pagu"] * 100, 2),
+        pagu_revisions=[
+            dict(kode=k, nama=nama, pagu_lama=old_p, pagu_baru=new_p, delta=new_p - old_p)
+            for k, nama, old_p, new_p in plan.get("_pagu_revisions", [])
+        ],
+        cross_check=dict(e1=ver["e1"], e2=ver["e2"], e3=ver["e3"], e4_match=ver["e4_match"], e5_match=ver["e5_match"]),
+        all_checks_pass=(ver["e1"] == 0 and ver["e2"] == 0 and ver["e3"] == 0 and ver["e4_match"] and ver["e5_match"]),
         sisa_per_program=sisa_per_program,
         top_items_realisasi=[
             dict(kode=k, nama=it["n"], pagu=it["p"], m=it["m"],
@@ -1165,14 +1214,20 @@ def main():
     plan = build_plan(baseline, pdf_data, c11p_mode="rebase" if args.c11p_rebase else "rolling")
     new_html = apply_template(baseline, plan, new_curr)
 
-    # PDF total (Kol.13 BELANJA DAERAH from page 1 — sum from all prog items)
-    pdf_total = sum(p["m_new"] for p in plan["prog"].values())
+    # Ground truth dari baris grand-total "BELANJA DAERAH" PDF kalau terbaca;
+    # fallback ke rollup prog kalau row itu tak ketemu (format PDF berubah dll).
+    pdf_total = plan.get("total_realisasi_pdf") or sum(p["m_new"] for p in plan["prog"].values())
+    pdf_pagu  = plan.get("total_anggaran_pdf")
 
-    ver = verify(new_html, expected_total=pdf_total)
-    print(f"  Total Pagu:      Rp {fmt_rp(PAGU_TOTAL)}")
+    ver = verify(new_html, expected_total=pdf_total, expected_pagu=pdf_pagu)
+    print(f"  Total Pagu:      Rp {fmt_rp(plan['total_pagu'])}")
     print(f"  Realisasi lalu:  Rp {fmt_rp(ver['total_f'])}")
     print(f"  Realisasi baru:  Rp {fmt_rp(ver['total_m'])}")
     print(f"  Kenaikan:        +Rp {fmt_rp(ver['total_m'] - ver['total_f'])}")
+    if plan.get("_pagu_revisions"):
+        print(f"\n  ⚠️  Revisi pagu terdeteksi ({len(plan['_pagu_revisions'])} kegiatan):")
+        for k, nama, old_p, new_p in plan["_pagu_revisions"]:
+            print(f"      {k} {nama[:45]}: Rp{fmt_rp(old_p)} → Rp{fmt_rp(new_p)} ({new_p-old_p:+,})".replace(",", "."))
     print()
     print(f"  Cross-check:")
     e1, e2, e3 = ver["e1"], ver["e2"], ver["e3"]
@@ -1180,10 +1235,12 @@ def main():
     s2 = "✅" if e2 == 0 else f"❌ {e2} mismatch"
     s3 = "✅" if e3 == 0 else f"❌ {e3} mismatch"
     s4 = "✅ MATCH" if ver["e4_match"] else "❌ MISMATCH"
+    s5 = "✅ MATCH" if ver["e5_match"] else "❌ MISMATCH"
     print(f"    [1] prog.m = Σsub.m:        {s1}")
     print(f"    [2] sub.m  = Σitem.m:       {s2}")
     print(f"    [3] item.δ = Σdet.δ (n-gj): {s3}")
     print(f"    [4] total  = PDF Kol.13:    {s4}")
+    print(f"    [5] pagu   = PDF Anggaran:  {s5}")
 
     if args.dry_run:
         print(f"\n  [DRY-RUN] File TIDAK ditulis. Output size: {len(new_html):,} chars".replace(",", "."))
